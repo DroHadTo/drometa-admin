@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DroMeta Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://ylpgiwyowbkvralcesfl.supabase.co https://cdn.jsdelivr.net; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --bg2: #1a1a1a;
+      --bg3: #222;
+      --border: #2e2e2e;
+      --text: #e8e8e8;
+      --muted: #888;
+      --accent: #f9e49d;
+      --accent-dark: #d4b84a;
+      --green: #4ade80;
+      --blue: #60a5fa;
+      --orange: #fb923c;
+      --red: #f87171;
+      --radius: 8px;
+      --font: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+
+    /* LOGIN */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+    }
+    .login-box {
+      width: 100%; max-width: 380px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 40px 36px;
+    }
+    .login-logo {
+      font-size: 22px; font-weight: 700; letter-spacing: 2px;
+      color: var(--accent); text-align: center; margin-bottom: 8px;
+    }
+    .login-sub { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 32px; }
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+    .field input {
+      width: 100%; padding: 10px 14px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-family: var(--font); font-size: 14px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .btn-primary {
+      width: 100%; padding: 12px; background: var(--accent); color: #111;
+      border: none; border-radius: var(--radius); font-family: var(--font);
+      font-size: 13px; font-weight: 700; letter-spacing: 1px; cursor: pointer;
+      transition: background 0.2s; text-transform: uppercase;
+    }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-error {
+      margin-top: 14px; padding: 10px 14px;
+      background: rgba(248,113,113,0.1); border: 1px solid var(--red);
+      border-radius: var(--radius); color: var(--red); font-size: 12px;
+      text-align: center; display: none;
+    }
+    .cooldown-msg { color: var(--orange); font-size: 12px; text-align: center; margin-top: 12px; display: none; }
+
+    /* DASHBOARD */
+    #dashboard-screen { display: none; min-height: 100vh; }
+
+    .topbar {
+      height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-brand { color: var(--accent); font-weight: 700; letter-spacing: 2px; font-size: 15px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    .topbar-user { color: var(--muted); font-size: 12px; }
+    .btn-logout {
+      padding: 6px 14px; background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--muted); font-family: var(--font);
+      font-size: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+    .main { padding: 28px 24px; max-width: 1400px; margin: 0 auto; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px; cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--accent); }
+    .stat-card.active { border-color: var(--accent); background: rgba(249,228,157,0.06); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .stat-val { font-size: 28px; font-weight: 700; color: var(--text); }
+    .stat-card[data-filter="new"] .stat-val { color: var(--green); }
+    .stat-card[data-filter="replied"] .stat-val { color: var(--blue); }
+    .stat-card[data-filter="archived"] .stat-val { color: var(--muted); }
+
+    /* SUBMISSIONS TABLE */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .refresh-btn {
+      padding: 6px 12px; background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--muted); font-family: var(--font);
+      font-size: 11px; cursor: pointer; transition: all 0.2s;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 10px 14px; text-align: left; font-size: 11px;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+      border-bottom: 1px solid var(--border); font-weight: 500;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border); cursor: pointer;
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: var(--bg2); }
+    tbody tr.selected { background: rgba(249,228,157,0.05); border-color: rgba(249,228,157,0.2); }
+    tbody td { padding: 13px 14px; font-size: 13px; color: var(--text); }
+    .badge {
+      display: inline-block; padding: 2px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge-new { background: rgba(74,222,128,0.15); color: var(--green); }
+    .badge-read { background: rgba(249,228,157,0.1); color: var(--accent); }
+    .badge-replied { background: rgba(96,165,250,0.15); color: var(--blue); }
+    .badge-archived { background: rgba(100,100,100,0.2); color: var(--muted); }
+
+    .empty-state {
+      padding: 60px 20px; text-align: center; color: var(--muted); font-size: 13px;
+    }
+
+    /* DETAIL PANEL */
+    #detail-panel {
+      margin-top: 28px; background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 28px; display: none;
+    }
+    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
+    .detail-name { font-size: 18px; font-weight: 700; color: var(--accent); }
+    .detail-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-action {
+      padding: 7px 14px; border-radius: var(--radius); font-family: var(--font);
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer;
+      border: 1px solid; transition: all 0.2s; text-transform: uppercase;
+    }
+    .btn-read { border-color: var(--accent); color: var(--accent); background: transparent; }
+    .btn-read:hover { background: rgba(249,228,157,0.1); }
+    .btn-replied { border-color: var(--blue); color: var(--blue); background: transparent; }
+    .btn-replied:hover { background: rgba(96,165,250,0.1); }
+    .btn-archive { border-color: var(--muted); color: var(--muted); background: transparent; }
+    .btn-archive:hover { border-color: var(--red); color: var(--red); }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .detail-field label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px; }
+    .detail-field p { font-size: 13px; color: var(--text); word-break: break-word; }
+    .detail-field p a { color: var(--accent); text-decoration: none; }
+    .detail-field p a:hover { text-decoration: underline; }
+    .detail-message-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .detail-message {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px; font-size: 14px; line-height: 1.7; color: var(--text);
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .detail-close {
+      float: right; background: transparent; border: none; color: var(--muted);
+      font-size: 18px; cursor: pointer; padding: 0; line-height: 1;
+    }
+    .detail-close:hover { color: var(--text); }
+
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+    .dot-anim::after { content: '...'; animation: dots 1.2s steps(3, end) infinite; }
+    @keyframes dots { 0%,20%{content:'.'} 40%{content:'..'} 60%,100%{content:'...'} }
+
+    @media (max-width: 600px) {
+      .main { padding: 16px 12px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      thead th:nth-child(3), thead th:nth-child(5), tbody td:nth-child(3), tbody td:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">DROMETA</div>
+    <div class="login-sub">Admin Portal</div>
+    <form id="login-form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="email" required placeholder="admin@drometa.xyz">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+      <div class="cooldown-msg" id="cooldown-msg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard-screen">
+  <div class="topbar">
+    <div class="topbar-brand">DROMETA ADMIN</div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="user-email"></span>
+      <button class="btn-logout" id="logout-btn">Logout</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card active" data-filter="all">
+        <div class="stat-label">Total</div>
+        <div class="stat-val" id="stat-total">0</div>
+      </div>
+      <div class="stat-card" data-filter="new">
+        <div class="stat-label">New</div>
+        <div class="stat-val" id="stat-new">0</div>
+      </div>
+      <div class="stat-card" data-filter="read">
+        <div class="stat-label">Read</div>
+        <div class="stat-val" id="stat-read">0</div>
+      </div>
+      <div class="stat-card" data-filter="replied">
+        <div class="stat-label">Replied</div>
+        <div class="stat-val" id="stat-replied">0</div>
+      </div>
+      <div class="stat-card" data-filter="archived">
+        <div class="stat-label">Archived</div>
+        <div class="stat-val" id="stat-archived">0</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title" id="filter-label">All Submissions</div>
+      <button class="refresh-btn" id="refresh-btn">Refresh</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="loading dot-anim" id="loading-msg">Loading</div>
+      <table id="submissions-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state" style="display:none">No submissions yet.</div>
+    </div>
+
+    <div id="detail-panel">
+      <div class="detail-header">
+        <div>
+          <div class="detail-name" id="detail-name"></div>
+          <div class="detail-time" id="detail-time"></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div class="detail-actions" id="detail-actions"></div>
+          <button class="detail-close" id="close-detail" title="Close">&#x2715;</button>
+        </div>
+      </div>
+      <div class="detail-grid" id="detail-grid"></div>
+      <div class="detail-message-label">Message</div>
+      <div class="detail-message" id="detail-message"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const SB_URL = 'https://ylpgiwyowbkvralcesfl.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlscGdpd3lvd2JrdnJhbGNlc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODAxMzQsImV4cCI6MjA5MDM1NjEzNH0.s1iGsl-NXgB7_5d6J8O27419nbUheaajjm7jwQ4C-Bk';
+
+  const { createClient } = window.supabase;
+  const db = createClient(SB_URL, SB_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+
+  // Rate limiting
+  const RL = { attempts: 0, max: 5, cooldownUntil: 0, cooldownMs: 60000 };
+
+  let currentFilter = 'all';
+  let allSubmissions = [];
+  let selectedId = null;
+
+  // ---- AUTH ----
+  async function init() {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) { showDashboard(session.user); }
+    db.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') showDashboard(session.user);
+      if (event === 'SIGNED_OUT') showLogin();
+    });
+  }
+
+  function showLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('dashboard-screen').style.display = 'none';
+  }
+
+  function showDashboard(user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard-screen').style.display = 'block';
+    document.getElementById('user-email').textContent = user.email;
+    loadSubmissions();
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const now = Date.now();
+    if (now < RL.cooldownUntil) {
+      const remaining = Math.ceil((RL.cooldownUntil - now) / 1000);
+      showCooldown(`Too many attempts. Try again in ${remaining}s.`);
+      return;
+    }
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Signing in...';
+    hideLoginError();
+
+    const { error } = await db.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      RL.attempts++;
+      if (RL.attempts >= RL.max) {
+        RL.cooldownUntil = Date.now() + RL.cooldownMs;
+        RL.attempts = 0;
+        showCooldown('Too many failed attempts. Locked for 60 seconds.');
+      } else {
+        showLoginError('Invalid credentials. Check your email and password.');
+      }
+      btn.disabled = false; btn.textContent = 'Sign In';
+    } else {
+      RL.attempts = 0;
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await db.auth.signOut();
+  });
+
+  function showLoginError(msg) {
+    const el = document.getElementById('login-error');
+    el.textContent = msg; el.style.display = 'block';
+  }
+  function hideLoginError() {
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('cooldown-msg').style.display = 'none';
+  }
+  function showCooldown(msg) {
+    const el = document.getElementById('cooldown-msg');
+    el.textContent = msg; el.style.display = 'block';
+    document.getElementById('login-error').style.display = 'none';
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    const interval = setInterval(() => {
+      if (Date.now() >= RL.cooldownUntil) {
+        clearInterval(interval);
+        el.style.display = 'none';
+        btn.disabled = false; btn.textContent = 'Sign In';
+      } else {
+        const s = Math.ceil((RL.cooldownUntil - Date.now()) / 1000);
+        el.textContent = `Too many attempts. Retry in ${s}s.`;
+      }
+    }, 1000);
+  }
+
+  // ---- SUBMISSIONS ----
+  async function loadSubmissions() {
+    document.getElementById('loading-msg').style.display = 'block';
+    document.getElementById('submissions-table').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+
+    const { data, error } = await db
+      .from('form_submissions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    document.getElementById('loading-msg').style.display = 'none';
+
+    if (error) { console.error(error); return; }
+
+    allSubmissions = data || [];
+    updateStats();
+    renderTable();
+  }
+
+  function updateStats() {
+    const counts = { new: 0, read: 0, replied: 0, archived: 0 };
+    allSubmissions.forEach(s => { if (counts[s.status] !== undefined) counts[s.status]++; });
+    document.getElementById('stat-total').textContent = allSubmissions.length;
+    document.getElementById('stat-new').textContent = counts.new;
+    document.getElementById('stat-read').textContent = counts.read;
+    document.getElementById('stat-replied').textContent = counts.replied;
+    document.getElementById('stat-archived').textContent = counts.archived;
+  }
+
+  function renderTable() {
+    const filtered = currentFilter === 'all'
+      ? allSubmissions
+      : allSubmissions.filter(s => s.status === currentFilter);
+
+    document.getElementById('filter-label').textContent =
+      currentFilter === 'all' ? 'All Submissions' : `${cap(currentFilter)} Submissions`;
+
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '';
+
+    if (filtered.length === 0) {
+      document.getElementById('submissions-table').style.display = 'none';
+      document.getElementById('empty-state').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('submissions-table').style.display = 'table';
+    document.getElementById('empty-state').style.display = 'none';
+
+    filtered.forEach(sub => {
+      const tr = document.createElement('tr');
+      if (sub.id === selectedId) tr.classList.add('selected');
+      tr.innerHTML = `
+        <td><strong>${esc(sub.name)}</strong></td>
+        <td><a href="mailto:${esc(sub.email)}" style="color:var(--accent);text-decoration:none" onclick="event.stopPropagation()">${esc(sub.email)}</a></td>
+        <td>${sub.inquiry_type ? esc(sub.inquiry_type) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td><span class="badge badge-${sub.status}">${sub.status}</span></td>
+        <td style="color:var(--muted)">${formatDate(sub.created_at)}</td>
+      `;
+      tr.addEventListener('click', () => openDetail(sub.id));
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Stat cards filter
+  document.getElementById('stats-grid').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-filter]');
+    if (!card) return;
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    currentFilter = card.dataset.filter;
+    selectedId = null;
+    closeDetail();
+    renderTable();
+  });
+
+  document.getElementById('refresh-btn').addEventListener('click', loadSubmissions);
+
+  // ---- DETAIL ----
+  async function openDetail(id) {
+    const sub = allSubmissions.find(s => s.id === id);
+    if (!sub) return;
+    selectedId = id;
+    renderTable();
+
+    // Auto-mark as read
+    if (sub.status === 'new') {
+      await updateStatus(id, 'read');
+    }
+
+    document.getElementById('detail-name').textContent = sub.name;
+    document.getElementById('detail-time').textContent =
+      'Received ' + new Date(sub.created_at).toLocaleString();
+
+    const grid = document.getElementById('detail-grid');
+    grid.innerHTML = `
+      <div class="detail-field"><label>Email</label><p><a href="mailto:${esc(sub.email)}">${esc(sub.email)}</a></p></div>
+      ${sub.x_handle ? `<div class="detail-field"><label>X Handle</label><p><a href="https://x.com/${esc(sub.x_handle.replace('@',''))}" target="_blank" rel="noopener">${esc(sub.x_handle)}</a></p></div>` : ''}
+      ${sub.telegram ? `<div class="detail-field"><label>Telegram</label><p>${esc(sub.telegram)}</p></div>` : ''}
+      ${sub.inquiry_type ? `<div class="detail-field"><label>Inquiry Type</label><p>${esc(sub.inquiry_type)}</p></div>` : ''}
+      <div class="detail-field"><label>Status</label><p><span class="badge badge-${allSubmissions.find(s=>s.id===id)?.status || sub.status}">${allSubmissions.find(s=>s.id===id)?.status || sub.status}</span></p></div>
+      <div class="detail-field"><label>Source</label><p>${esc(sub.source || 'contact-page')}</p></div>
+    `;
+
+    document.getElementById('detail-message').textContent = sub.message;
+
+    const actions = document.getElementById('detail-actions');
+    const current = allSubmissions.find(s => s.id === id)?.status || sub.status;
+    actions.innerHTML = '';
+    if (current !== 'replied') {
+      const btnR = document.createElement('button');
+      btnR.className = 'btn-action btn-replied'; btnR.textContent = 'Mark Replied';
+      btnR.onclick = () => updateStatus(id, 'replied');
+      actions.appendChild(btnR);
+    }
+    if (current !== 'read') {
+      const btnMR = document.createElement('button');
+      btnMR.className = 'btn-action btn-read'; btnMR.textContent = 'Mark Read';
+      btnMR.onclick = () => updateStatus(id, 'read');
+      actions.appendChild(btnMR);
+    }
+    if (current !== 'archived') {
+      const btnA = document.createElement('button');
+      btnA.className = 'btn-action btn-archive'; btnA.textContent = 'Archive';
+      btnA.onclick = () => updateStatus(id, 'archived');
+      actions.appendChild(btnA);
+    }
+
+    document.getElementById('detail-panel').style.display = 'block';
+    document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function updateStatus(id, status) {
+    const { error } = await db
+      .from('form_submissions')
+      .update({ status })
+      .eq('id', id);
+    if (error) { console.error(error); return; }
+    const sub = allSubmissions.find(s => s.id === id);
+    if (sub) sub.status = status;
+    updateStats();
+    renderTable();
+    if (selectedId === id) openDetail(id);
+  }
+
+  function closeDetail() {
+    document.getElementById('detail-panel').style.display = 'none';
+    selectedId = null;
+  }
+  document.getElementById('close-detail').addEventListener('click', closeDetail);
+
+  // ---- HELPERS ----
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
