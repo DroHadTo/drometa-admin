@@ -1,563 +1,869 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DroMeta Admin</title>
-  <meta name="robots" content="noindex, nofollow">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://ylpgiwyowbkvralcesfl.supabase.co https://cdn.jsdelivr.net; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f0f0f;
-      --bg2: #1a1a1a;
-      --bg3: #222;
-      --border: #2e2e2e;
-      --text: #e8e8e8;
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #1a1a1a;
+      --border: #2a2a2a;
+      --accent: #c9a87c;
+      --accent2: #b8935f;
+      --text: #f0f0f0;
       --muted: #888;
-      --accent: #f9e49d;
-      --accent-dark: #d4b84a;
-      --green: #4ade80;
-      --blue: #60a5fa;
-      --orange: #fb923c;
-      --red: #f87171;
-      --radius: 8px;
-      --font: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      --danger: #ff4d4d;
+      --success: #4dff91;
+      --warning: #ffd54d;
     }
 
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
 
-    /* LOGIN */
+    /* ââ LOGIN âââââââââââââââââââââââââââââââââââââââââââ */
     #login-screen {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
     }
-    .login-box {
-      width: 100%; max-width: 380px;
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 12px; padding: 40px 36px;
+
+    .login-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
     }
+
     .login-logo {
-      font-size: 22px; font-weight: 700; letter-spacing: 2px;
-      color: var(--accent); text-align: center; margin-bottom: 8px;
+      text-align: center;
+      margin-bottom: 32px;
     }
-    .login-sub { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 32px; }
-    .field { margin-bottom: 18px; }
-    .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
-    .field input {
-      width: 100%; padding: 10px 14px;
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: var(--radius); color: var(--text);
-      font-family: var(--font); font-size: 14px; outline: none;
-      transition: border-color 0.2s;
-    }
-    .field input:focus { border-color: var(--accent); }
-    .btn-primary {
-      width: 100%; padding: 12px; background: var(--accent); color: #111;
-      border: none; border-radius: var(--radius); font-family: var(--font);
-      font-size: 13px; font-weight: 700; letter-spacing: 1px; cursor: pointer;
-      transition: background 0.2s; text-transform: uppercase;
-    }
-    .btn-primary:hover { background: var(--accent-dark); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .login-error {
-      margin-top: 14px; padding: 10px 14px;
-      background: rgba(248,113,113,0.1); border: 1px solid var(--red);
-      border-radius: var(--radius); color: var(--red); font-size: 12px;
-      text-align: center; display: none;
-    }
-    .cooldown-msg { color: var(--orange); font-size: 12px; text-align: center; margin-top: 12px; display: none; }
 
-    /* DASHBOARD */
-    #dashboard-screen { display: none; min-height: 100vh; }
-
-    .topbar {
-      height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    .login-logo span {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -1px;
     }
-    .topbar-brand { color: var(--accent); font-weight: 700; letter-spacing: 2px; font-size: 15px; }
-    .topbar-right { display: flex; align-items: center; gap: 16px; }
-    .topbar-user { color: var(--muted); font-size: 12px; }
-    .btn-logout {
-      padding: 6px 14px; background: transparent; border: 1px solid var(--border);
-      border-radius: var(--radius); color: var(--muted); font-family: var(--font);
-      font-size: 12px; cursor: pointer; transition: all 0.2s;
+
+    .login-logo span em {
+      color: var(--accent);
+      font-style: normal;
     }
-    .btn-logout:hover { border-color: var(--red); color: var(--red); }
 
-    .main { padding: 28px 24px; max-width: 1400px; margin: 0 auto; }
-
-    /* STATS */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 28px; }
-    .stat-card {
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 18px 20px; cursor: pointer;
-      transition: border-color 0.2s;
+    .login-logo p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
     }
-    .stat-card:hover { border-color: var(--accent); }
-    .stat-card.active { border-color: var(--accent); background: rgba(249,228,157,0.06); }
-    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .stat-val { font-size: 28px; font-weight: 700; color: var(--text); }
-    .stat-card[data-filter="new"] .stat-val { color: var(--green); }
-    .stat-card[data-filter="replied"] .stat-val { color: var(--blue); }
-    .stat-card[data-filter="archived"] .stat-val { color: var(--muted); }
 
-    /* SUBMISSIONS TABLE */
-    .section-header {
-      display: flex; align-items: center; justify-content: space-between;
+    .form-group {
       margin-bottom: 16px;
     }
-    .section-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-    .refresh-btn {
-      padding: 6px 12px; background: transparent; border: 1px solid var(--border);
-      border-radius: var(--radius); color: var(--muted); font-family: var(--font);
-      font-size: 11px; cursor: pointer; transition: all 0.2s;
-    }
-    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th {
-      padding: 10px 14px; text-align: left; font-size: 11px;
-      color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
-      border-bottom: 1px solid var(--border); font-weight: 500;
-    }
-    tbody tr {
-      border-bottom: 1px solid var(--border); cursor: pointer;
-      transition: background 0.15s;
-    }
-    tbody tr:hover { background: var(--bg2); }
-    tbody tr.selected { background: rgba(249,228,157,0.05); border-color: rgba(249,228,157,0.2); }
-    tbody td { padding: 13px 14px; font-size: 13px; color: var(--text); }
-    .badge {
-      display: inline-block; padding: 2px 9px; border-radius: 20px;
-      font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
       text-transform: uppercase;
-    }
-    .badge-new { background: rgba(74,222,128,0.15); color: var(--green); }
-    .badge-read { background: rgba(249,228,157,0.1); color: var(--accent); }
-    .badge-replied { background: rgba(96,165,250,0.15); color: var(--blue); }
-    .badge-archived { background: rgba(100,100,100,0.2); color: var(--muted); }
-
-    .empty-state {
-      padding: 60px 20px; text-align: center; color: var(--muted); font-size: 13px;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
     }
 
-    /* DETAIL PANEL */
-    #detail-panel {
-      margin-top: 28px; background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 10px; padding: 28px; display: none;
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
     }
-    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
-    .detail-name { font-size: 18px; font-weight: 700; color: var(--accent); }
-    .detail-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .btn-login:hover { background: var(--accent2); }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .login-error {
+      color: var(--danger);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+      min-height: 18px;
+    }
+
+    /* ââ DASHBOARD âââââââââââââââââââââââââââââââââââââââ */
+    #dashboard { display: none; }
+
+    .topbar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-logo {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .topbar-logo em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .topbar-logo span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+      margin-left: 8px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-user {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .btn-logout {
+      padding: 7px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-logout:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .main {
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ââ STATS âââââââââââââââââââââââââââââââââââââââââââ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.success { color: var(--success); }
+    .stat-value.muted { color: var(--muted); }
+
+    /* ââ FILTERS âââââââââââââââââââââââââââââââââââââââââ */
+    .filters {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .filter-select:focus { border-color: var(--accent); }
+
+    .btn-refresh {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      margin-left: auto;
+    }
+
+    .btn-refresh:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .results-count {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ââ TABLE âââââââââââââââââââââââââââââââââââââââââââ */
+    .table-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead tr {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg3); }
+    tbody tr.row-new { border-left: 3px solid var(--accent); }
+
+    td {
+      padding: 14px 16px;
+      vertical-align: top;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    td.message-cell {
+      max-width: 280px;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-new { background: rgba(200,240,60,0.15); color: var(--accent); }
+    .badge-reviewed { background: rgba(77,255,145,0.1); color: var(--success); }
+    .badge-archived { background: rgba(136,136,136,0.15); color: var(--muted); }
+
+    .source-tag {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg3);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .date-cell { color: var(--muted); font-size: 12px; }
+
+    /* ââ MODAL âââââââââââââââââââââââââââââââââââââââââââ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 24px 28px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg2);
+    }
+
+    .modal-name { font-size: 18px; font-weight: 700; }
+    .modal-email { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .modal-body { padding: 24px 28px; }
+
+    .modal-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: start;
+    }
+
+    .modal-key {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding-top: 2px;
+    }
+
+    .modal-val { font-size: 14px; word-break: break-word; }
+
+    .modal-message {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      padding: 16px 28px 24px;
+      border-top: 1px solid var(--border);
+    }
+
     .btn-action {
-      padding: 7px 14px; border-radius: var(--radius); font-family: var(--font);
-      font-size: 11px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer;
-      border: 1px solid; transition: all 0.2s; text-transform: uppercase;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      transition: all 0.2s;
     }
-    .btn-read { border-color: var(--accent); color: var(--accent); background: transparent; }
-    .btn-read:hover { background: rgba(249,228,157,0.1); }
-    .btn-replied { border-color: var(--blue); color: var(--blue); background: transparent; }
-    .btn-replied:hover { background: rgba(96,165,250,0.1); }
-    .btn-archive { border-color: var(--muted); color: var(--muted); background: transparent; }
-    .btn-archive:hover { border-color: var(--red); color: var(--red); }
-    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 24px; }
-    .detail-field label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px; }
-    .detail-field p { font-size: 13px; color: var(--text); word-break: break-word; }
-    .detail-field p a { color: var(--accent); text-decoration: none; }
-    .detail-field p a:hover { text-decoration: underline; }
-    .detail-message-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-    .detail-message {
-      background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 16px; font-size: 14px; line-height: 1.7; color: var(--text);
-      white-space: pre-wrap; word-break: break-word;
-    }
-    .detail-close {
-      float: right; background: transparent; border: none; color: var(--muted);
-      font-size: 18px; cursor: pointer; padding: 0; line-height: 1;
-    }
-    .detail-close:hover { color: var(--text); }
 
-    .loading { text-align: center; padding: 40px; color: var(--muted); }
-    .dot-anim::after { content: '...'; animation: dots 1.2s steps(3, end) infinite; }
-    @keyframes dots { 0%,20%{content:'.'} 40%{content:'..'} 60%,100%{content:'...'} }
+    .btn-action:hover { border-color: var(--accent); color: var(--accent); }
 
-    @media (max-width: 600px) {
-      .main { padding: 16px 12px; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      thead th:nth-child(3), thead th:nth-child(5), tbody td:nth-child(3), tbody td:nth-child(5) { display: none; }
+    .btn-action.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    /* ââ EMPTY / LOADING âââââââââââââââââââââââââââââââââ */
+    .empty-state {
+      text-align: center;
+      padding: 64px 32px;
+      color: var(--muted);
+    }
+
+    .empty-state p { font-size: 15px; }
+
+    .loading-row td {
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
     }
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ââ LOGIN SCREEN ââââââââââââââââââââââââââââââââââââ -->
 <div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">DROMETA</div>
-    <div class="login-sub">Admin Portal</div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div><span>Dro<em>Meta</em></span></div>
+      <p>Admin Dashboard</p>
+    </div>
     <form id="login-form">
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" autocomplete="email" required placeholder="admin@drometa.xyz">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="DroMeta" autocomplete="username" />
       </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" autocomplete="current-password" required>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="â¢â¢â¢â¢â¢â¢â¢â¢â¢â¢" autocomplete="current-password" />
       </div>
-      <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+      <button type="submit" class="btn-login" id="login-btn">Sign In</button>
       <div class="login-error" id="login-error"></div>
-      <div class="cooldown-msg" id="cooldown-msg"></div>
     </form>
   </div>
 </div>
 
-<!-- DASHBOARD -->
-<div id="dashboard-screen">
-  <div class="topbar">
-    <div class="topbar-brand">DROMETA ADMIN</div>
-    <div class="topbar-right">
-      <span class="topbar-user" id="user-email"></span>
-      <button class="btn-logout" id="logout-btn">Logout</button>
+<!-- ââ DASHBOARD âââââââââââââââââââââââââââââââââââââââ -->
+<div id="dashboard">
+  <nav class="topbar">
+    <div class="topbar-logo">
+      Dro<em>Meta</em><span>Admin</span>
     </div>
-  </div>
-  <div class="main">
-    <div class="stats-grid" id="stats-grid">
-      <div class="stat-card active" data-filter="all">
-        <div class="stat-label">Total</div>
-        <div class="stat-val" id="stat-total">0</div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn-logout" id="logout-btn">Sign Out</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Leads</div>
+        <div class="stat-value accent" id="stat-total">â</div>
       </div>
-      <div class="stat-card" data-filter="new">
+      <div class="stat-card">
         <div class="stat-label">New</div>
-        <div class="stat-val" id="stat-new">0</div>
+        <div class="stat-value warning" id="stat-new">â</div>
       </div>
-      <div class="stat-card" data-filter="read">
-        <div class="stat-label">Read</div>
-        <div class="stat-val" id="stat-read">0</div>
+      <div class="stat-card">
+        <div class="stat-label">Reviewed</div>
+        <div class="stat-value success" id="stat-reviewed">â</div>
       </div>
-      <div class="stat-card" data-filter="replied">
-        <div class="stat-label">Replied</div>
-        <div class="stat-val" id="stat-replied">0</div>
-      </div>
-      <div class="stat-card" data-filter="archived">
+      <div class="stat-card">
         <div class="stat-label">Archived</div>
-        <div class="stat-val" id="stat-archived">0</div>
+        <div class="stat-value muted" id="stat-archived">â</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Homepage</div>
+        <div class="stat-value muted" id="stat-homepage">â</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Contact Page</div>
+        <div class="stat-value muted" id="stat-contact">â</div>
       </div>
     </div>
 
-    <div class="section-header">
-      <div class="section-title" id="filter-label">All Submissions</div>
-      <button class="refresh-btn" id="refresh-btn">Refresh</button>
+    <div class="filters">
+      <select class="filter-select" id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="new">New</option>
+        <option value="reviewed">Reviewed</option>
+        <option value="archived">Archived</option>
+      </select>
+      <select class="filter-select" id="filter-source">
+        <option value="">All Sources</option>
+        <option value="homepage">Homepage</option>
+        <option value="contact-page">Contact Page</option>
+      </select>
+      <select class="filter-select" id="filter-type">
+        <option value="">All Types</option>
+        <option value="collaboration">Collaboration</option>
+        <option value="consulting">Consulting</option>
+        <option value="investment">Investment</option>
+        <option value="other">Other</option>
+      </select>
+      <span class="results-count" id="results-count"></span>
+      <button class="btn-refresh" id="refresh-btn">Refresh</button>
     </div>
 
     <div class="table-wrap">
-      <div class="loading dot-anim" id="loading-msg">Loading</div>
-      <table id="submissions-table" style="display:none">
+      <table>
         <thead>
           <tr>
+            <th>Status</th>
             <th>Name</th>
             <th>Email</th>
+            <th>X Handle</th>
             <th>Type</th>
-            <th>Status</th>
+            <th>Message</th>
+            <th>Source</th>
             <th>Date</th>
           </tr>
         </thead>
-        <tbody id="table-body"></tbody>
+        <tbody id="submissions-body">
+          <tr class="loading-row"><td colspan="8">Loading submissions...</td></tr>
+        </tbody>
       </table>
-      <div class="empty-state" id="empty-state" style="display:none">No submissions yet.</div>
     </div>
+  </main>
+</div>
 
-    <div id="detail-panel">
-      <div class="detail-header">
-        <div>
-          <div class="detail-name" id="detail-name"></div>
-          <div class="detail-time" id="detail-time"></div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:12px">
-          <div class="detail-actions" id="detail-actions"></div>
-          <button class="detail-close" id="close-detail" title="Close">&#x2715;</button>
-        </div>
+<!-- ââ MODAL âââââââââââââââââââââââââââââââââââââââââââ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name" id="modal-name"></div>
+        <div class="modal-email" id="modal-email"></div>
       </div>
-      <div class="detail-grid" id="detail-grid"></div>
-      <div class="detail-message-label">Message</div>
-      <div class="detail-message" id="detail-message"></div>
+      <button class="modal-close" id="modal-close">X</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="modal-key">X Handle</div>
+        <div class="modal-val" id="modal-x"></div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-key">Telegram</div>
+        <div class="modal-val" id="modal-tg"></div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-key">Inquiry Type</div>
+        <div class="modal-val" id="modal-type"></div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-key">Source</div>
+        <div class="modal-val" id="modal-source"></div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-key">Submitted</div>
+        <div class="modal-val" id="modal-date"></div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-key">Message</div>
+        <div></div>
+      </div>
+      <div class="modal-message" id="modal-message"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-action" data-status="new" id="btn-new">Mark New</button>
+      <button class="btn-action" data-status="reviewed" id="btn-reviewed">Mark Reviewed</button>
+      <button class="btn-action" data-status="archived" id="btn-archived">Archive</button>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 (function () {
-  'use strict';
-
+  // ââ Supabase setup âââââââââââââââââââââââââââââââââââ
   const SB_URL = 'https://ylpgiwyowbkvralcesfl.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlscGdpd3lvd2JrdnJhbGNlc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODAxMzQsImV4cCI6MjA5MDM1NjEzNH0.s1iGsl-NXgB7_5d6J8O27419nbUheaajjm7jwQ4C-Bk';
-
+  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlscGdpd3lvd2JrdnJhbGNlc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODAxMzQsImV4cCI6MjA5MDM1NjEzNH0.s1iGsl-NXgB7_5d6J8O27419nbUheaajjm7jwQ4C-Bk';
   const { createClient } = window.supabase;
-  const db = createClient(SB_URL, SB_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true }
+  const sb = createClient(SB_URL, SB_ANON);
+
+  // username â email map (single admin setup)
+  const USER_MAP = { 'DroMeta': 'admin@drometa.xyz' };
+
+  // ââ State ââââââââââââââââââââââââââââââââââââââââââââ
+  let allSubmissions = [];
+  let currentRow = null;
+
+  // ââ Elements âââââââââââââââââââââââââââââââââââââââââ
+  const loginScreen = document.getElementById('login-screen');
+  const dashboard   = document.getElementById('dashboard');
+  const loginForm   = document.getElementById('login-form');
+  const loginBtn    = document.getElementById('login-btn');
+  const loginError  = document.getElementById('login-error');
+  const usernameEl  = document.getElementById('username');
+  const passwordEl  = document.getElementById('password');
+  const logoutBtn   = document.getElementById('logout-btn');
+  const topbarUser  = document.getElementById('topbar-user');
+  const tbody       = document.getElementById('submissions-body');
+  const overlay     = document.getElementById('modal-overlay');
+  const modalClose  = document.getElementById('modal-close');
+  const refreshBtn  = document.getElementById('refresh-btn');
+
+  // ââ Auth state âââââââââââââââââââââââââââââââââââââââ
+  sb.auth.onAuthStateChange((_event, session) => {
+    if (session) {
+      showDashboard(session.user);
+    } else {
+      showLogin();
+    }
   });
 
-  // Rate limiting
-  const RL = { attempts: 0, max: 5, cooldownUntil: 0, cooldownMs: 60000 };
+  // ââ Login ââââââââââââââââââââââââââââââââââââââââââââ
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginError.textContent = '';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in...';
 
-  let currentFilter = 'all';
-  let allSubmissions = [];
-  let selectedId = null;
+    const username = usernameEl.value.trim();
+    const password = passwordEl.value;
+    const email = USER_MAP[username] || username;
 
-  // ---- AUTH ----
-  async function init() {
-    const { data: { session } } = await db.auth.getSession();
-    if (session) { showDashboard(session.user); }
-    db.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') showDashboard(session.user);
-      if (event === 'SIGNED_OUT') showLogin();
-    });
-  }
+    const { error } = await sb.auth.signInWithPassword({ email, password });
 
+    if (error) {
+      loginError.textContent = 'Invalid username or password.';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+    }
+  });
+
+  // ââ Logout âââââââââââââââââââââââââââââââââââââââââââ
+  logoutBtn.addEventListener('click', () => sb.auth.signOut());
+
+  // ââ Show/hide screens ââââââââââââââââââââââââââââââââ
   function showLogin() {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('dashboard-screen').style.display = 'none';
+    loginScreen.style.display = 'flex';
+    dashboard.style.display = 'none';
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Sign In';
+    passwordEl.value = '';
   }
 
   function showDashboard(user) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard-screen').style.display = 'block';
-    document.getElementById('user-email').textContent = user.email;
+    loginScreen.style.display = 'none';
+    dashboard.style.display = 'block';
+    const username = Object.keys(USER_MAP).find(k => USER_MAP[k] === user.email) || user.email;
+    topbarUser.textContent = username;
     loadSubmissions();
   }
 
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const now = Date.now();
-    if (now < RL.cooldownUntil) {
-      const remaining = Math.ceil((RL.cooldownUntil - now) / 1000);
-      showCooldown(`Too many attempts. Try again in ${remaining}s.`);
-      return;
-    }
-
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true; btn.textContent = 'Signing in...';
-    hideLoginError();
-
-    const { error } = await db.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      RL.attempts++;
-      if (RL.attempts >= RL.max) {
-        RL.cooldownUntil = Date.now() + RL.cooldownMs;
-        RL.attempts = 0;
-        showCooldown('Too many failed attempts. Locked for 60 seconds.');
-      } else {
-        showLoginError('Invalid credentials. Check your email and password.');
-      }
-      btn.disabled = false; btn.textContent = 'Sign In';
-    } else {
-      RL.attempts = 0;
-    }
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-    await db.auth.signOut();
-  });
-
-  function showLoginError(msg) {
-    const el = document.getElementById('login-error');
-    el.textContent = msg; el.style.display = 'block';
-  }
-  function hideLoginError() {
-    document.getElementById('login-error').style.display = 'none';
-    document.getElementById('cooldown-msg').style.display = 'none';
-  }
-  function showCooldown(msg) {
-    const el = document.getElementById('cooldown-msg');
-    el.textContent = msg; el.style.display = 'block';
-    document.getElementById('login-error').style.display = 'none';
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true;
-    const interval = setInterval(() => {
-      if (Date.now() >= RL.cooldownUntil) {
-        clearInterval(interval);
-        el.style.display = 'none';
-        btn.disabled = false; btn.textContent = 'Sign In';
-      } else {
-        const s = Math.ceil((RL.cooldownUntil - Date.now()) / 1000);
-        el.textContent = `Too many attempts. Retry in ${s}s.`;
-      }
-    }, 1000);
-  }
-
-  // ---- SUBMISSIONS ----
+  // ââ Load data ââââââââââââââââââââââââââââââââââââââââ
   async function loadSubmissions() {
-    document.getElementById('loading-msg').style.display = 'block';
-    document.getElementById('submissions-table').style.display = 'none';
-    document.getElementById('empty-state').style.display = 'none';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Loading...</td></tr>';
 
-    const { data, error } = await db
+    const { data, error } = await sb
       .from('form_submissions')
       .select('*')
       .order('created_at', { ascending: false });
 
-    document.getElementById('loading-msg').style.display = 'none';
-
-    if (error) { console.error(error); return; }
-
-    allSubmissions = data || [];
-    updateStats();
-    renderTable();
-  }
-
-  function updateStats() {
-    const counts = { new: 0, read: 0, replied: 0, archived: 0 };
-    allSubmissions.forEach(s => { if (counts[s.status] !== undefined) counts[s.status]++; });
-    document.getElementById('stat-total').textContent = allSubmissions.length;
-    document.getElementById('stat-new').textContent = counts.new;
-    document.getElementById('stat-read').textContent = counts.read;
-    document.getElementById('stat-replied').textContent = counts.replied;
-    document.getElementById('stat-archived').textContent = counts.archived;
-  }
-
-  function renderTable() {
-    const filtered = currentFilter === 'all'
-      ? allSubmissions
-      : allSubmissions.filter(s => s.status === currentFilter);
-
-    document.getElementById('filter-label').textContent =
-      currentFilter === 'all' ? 'All Submissions' : `${cap(currentFilter)} Submissions`;
-
-    const tbody = document.getElementById('table-body');
-    tbody.innerHTML = '';
-
-    if (filtered.length === 0) {
-      document.getElementById('submissions-table').style.display = 'none';
-      document.getElementById('empty-state').style.display = 'block';
+    if (error) {
+      tbody.innerHTML = `<tr class="loading-row"><td colspan="8">Error: ${error.message}</td></tr>`;
       return;
     }
 
-    document.getElementById('submissions-table').style.display = 'table';
-    document.getElementById('empty-state').style.display = 'none';
+    allSubmissions = data || [];
+    updateStats(allSubmissions);
+    applyFilters();
+  }
 
-    filtered.forEach(sub => {
-      const tr = document.createElement('tr');
-      if (sub.id === selectedId) tr.classList.add('selected');
-      tr.innerHTML = `
-        <td><strong>${esc(sub.name)}</strong></td>
-        <td><a href="mailto:${esc(sub.email)}" style="color:var(--accent);text-decoration:none" onclick="event.stopPropagation()">${esc(sub.email)}</a></td>
-        <td>${sub.inquiry_type ? esc(sub.inquiry_type) : '<span style="color:var(--muted)">—</span>'}</td>
-        <td><span class="badge badge-${sub.status}">${sub.status}</span></td>
-        <td style="color:var(--muted)">${formatDate(sub.created_at)}</td>
-      `;
-      tr.addEventListener('click', () => openDetail(sub.id));
-      tbody.appendChild(tr);
+  // ââ Stats ââââââââââââââââââââââââââââââââââââââââââââ
+  function updateStats(rows) {
+    document.getElementById('stat-total').textContent    = rows.length;
+    document.getElementById('stat-new').textContent      = rows.filter(r => r.status === 'new').length;
+    document.getElementById('stat-reviewed').textContent = rows.filter(r => r.status === 'reviewed').length;
+    document.getElementById('stat-archived').textContent = rows.filter(r => r.status === 'archived').length;
+    document.getElementById('stat-homepage').textContent = rows.filter(r => r.source === 'homepage').length;
+    document.getElementById('stat-contact').textContent  = rows.filter(r => r.source === 'contact-page').length;
+  }
+
+  // ââ Filters ââââââââââââââââââââââââââââââââââââââââââ
+  function applyFilters() {
+    const status = document.getElementById('filter-status').value;
+    const source = document.getElementById('filter-source').value;
+    const type   = document.getElementById('filter-type').value;
+
+    let rows = allSubmissions.filter(r => {
+      if (status && r.status !== status) return false;
+      if (source && r.source !== source) return false;
+      if (type && r.inquiry_type !== type) return false;
+      return true;
+    });
+
+    document.getElementById('results-count').textContent = `${rows.length} result${rows.length !== 1 ? 's' : ''}`;
+    renderTable(rows);
+  }
+
+  ['filter-status', 'filter-source', 'filter-type'].forEach(id => {
+    document.getElementById(id).addEventListener('change', applyFilters);
+  });
+
+  refreshBtn.addEventListener('click', loadSubmissions);
+
+  // ââ Render table âââââââââââââââââââââââââââââââââââââ
+  function renderTable(rows) {
+    if (!rows.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="8">No submissions found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+      const isNew = r.status === 'new';
+      const date  = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'â';
+      const msg   = (r.message || '').replace(/</g, '&lt;').substring(0, 80) + ((r.message || '').length > 80 ? '...' : '');
+      return `
+        <tr class="${isNew ? 'row-new' : ''}" data-id="${r.id}">
+          <td>${badgeHtml(r.status)}</td>
+          <td><strong>${esc(r.name)}</strong></td>
+          <td>${esc(r.email)}</td>
+          <td>${r.x_handle ? '@' + esc(r.x_handle.replace(/^@/, '')) : '<span style="color:var(--muted)">â</span>'}</td>
+          <td>${r.inquiry_type ? esc(r.inquiry_type) : '<span style="color:var(--muted)">â</span>'}</td>
+          <td class="message-cell">${msg || '<span style="color:var(--muted)">â</span>'}</td>
+          <td><span class="source-tag">${esc(r.source || 'â')}</span></td>
+          <td class="date-cell">${date}</td>
+        </tr>`;
+    }).join('');
+
+    // Row click â open modal
+    tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+      tr.addEventListener('click', () => {
+        const row = allSubmissions.find(r => r.id === tr.dataset.id);
+        if (row) openModal(row);
+      });
     });
   }
 
-  // Stat cards filter
-  document.getElementById('stats-grid').addEventListener('click', (e) => {
-    const card = e.target.closest('[data-filter]');
-    if (!card) return;
-    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-    card.classList.add('active');
-    currentFilter = card.dataset.filter;
-    selectedId = null;
-    closeDetail();
-    renderTable();
+  function badgeHtml(status) {
+    const map = { new: 'badge-new', reviewed: 'badge-reviewed', archived: 'badge-archived' };
+    return `<span class="badge ${map[status] || 'badge-archived'}">${status || 'unknown'}</span>`;
+  }
+
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ââ Modal âââââââââââââââââââââââââââââââââââââââââââââ
+  function openModal(row) {
+    currentRow = row;
+    document.getElementById('modal-name').textContent    = row.name || 'â';
+    document.getElementById('modal-email').textContent   = row.email || 'â';
+    document.getElementById('modal-x').textContent       = row.x_handle ? '@' + row.x_handle.replace(/^@/, '') : 'â';
+    document.getElementById('modal-tg').textContent      = row.telegram || 'â';
+    document.getElementById('modal-type').textContent    = row.inquiry_type || 'â';
+    document.getElementById('modal-source').textContent  = row.source || 'â';
+    document.getElementById('modal-message').textContent = row.message || 'â';
+
+    const date = row.created_at
+      ? new Date(row.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : 'â';
+    document.getElementById('modal-date').textContent = date;
+
+    // Highlight active status button
+    ['new','reviewed','archived'].forEach(s => {
+      const btn = document.getElementById('btn-' + s);
+      btn.classList.toggle('active', row.status === s);
+    });
+
+    overlay.classList.add('open');
+  }
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    currentRow = null;
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+  // ââ Status update âââââââââââââââââââââââââââââââââââââ
+  document.querySelectorAll('.btn-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!currentRow) return;
+      const newStatus = btn.dataset.status;
+      btn.textContent = 'Savingâ¦';
+
+      const { error } = await sb
+        .from('form_submissions')
+        .update({ status: newStatus })
+        .eq('id', currentRow.id);
+
+      if (!error) {
+        currentRow.status = newStatus;
+        // Update in allSubmissions array
+        const idx = allSubmissions.findIndex(r => r.id === currentRow.id);
+        if (idx >= 0) allSubmissions[idx].status = newStatus;
+        updateStats(allSubmissions);
+        applyFilters();
+        // Refresh button states
+        ['new','reviewed','archived'].forEach(s => {
+          const b = document.getElementById('btn-' + s);
+          b.classList.toggle('active', s === newStatus);
+          b.textContent = s === 'new' ? 'Mark New' : s === 'reviewed' ? 'Mark Reviewed' : 'Archive';
+        });
+      } else {
+        btn.textContent = btn.dataset.status === 'new' ? 'Mark New' : btn.dataset.status === 'reviewed' ? 'Mark Reviewed' : 'Archive';
+        alert('Update failed: ' + error.message);
+      }
+    });
   });
 
-  document.getElementById('refresh-btn').addEventListener('click', loadSubmissions);
-
-  // ---- DETAIL ----
-  async function openDetail(id) {
-    const sub = allSubmissions.find(s => s.id === id);
-    if (!sub) return;
-    selectedId = id;
-    renderTable();
-
-    // Auto-mark as read
-    if (sub.status === 'new') {
-      await updateStatus(id, 'read');
-    }
-
-    document.getElementById('detail-name').textContent = sub.name;
-    document.getElementById('detail-time').textContent =
-      'Received ' + new Date(sub.created_at).toLocaleString();
-
-    const grid = document.getElementById('detail-grid');
-    grid.innerHTML = `
-      <div class="detail-field"><label>Email</label><p><a href="mailto:${esc(sub.email)}">${esc(sub.email)}</a></p></div>
-      ${sub.x_handle ? `<div class="detail-field"><label>X Handle</label><p><a href="https://x.com/${esc(sub.x_handle.replace('@',''))}" target="_blank" rel="noopener">${esc(sub.x_handle)}</a></p></div>` : ''}
-      ${sub.telegram ? `<div class="detail-field"><label>Telegram</label><p>${esc(sub.telegram)}</p></div>` : ''}
-      ${sub.inquiry_type ? `<div class="detail-field"><label>Inquiry Type</label><p>${esc(sub.inquiry_type)}</p></div>` : ''}
-      <div class="detail-field"><label>Status</label><p><span class="badge badge-${allSubmissions.find(s=>s.id===id)?.status || sub.status}">${allSubmissions.find(s=>s.id===id)?.status || sub.status}</span></p></div>
-      <div class="detail-field"><label>Source</label><p>${esc(sub.source || 'contact-page')}</p></div>
-    `;
-
-    document.getElementById('detail-message').textContent = sub.message;
-
-    const actions = document.getElementById('detail-actions');
-    const current = allSubmissions.find(s => s.id === id)?.status || sub.status;
-    actions.innerHTML = '';
-    if (current !== 'replied') {
-      const btnR = document.createElement('button');
-      btnR.className = 'btn-action btn-replied'; btnR.textContent = 'Mark Replied';
-      btnR.onclick = () => updateStatus(id, 'replied');
-      actions.appendChild(btnR);
-    }
-    if (current !== 'read') {
-      const btnMR = document.createElement('button');
-      btnMR.className = 'btn-action btn-read'; btnMR.textContent = 'Mark Read';
-      btnMR.onclick = () => updateStatus(id, 'read');
-      actions.appendChild(btnMR);
-    }
-    if (current !== 'archived') {
-      const btnA = document.createElement('button');
-      btnA.className = 'btn-action btn-archive'; btnA.textContent = 'Archive';
-      btnA.onclick = () => updateStatus(id, 'archived');
-      actions.appendChild(btnA);
-    }
-
-    document.getElementById('detail-panel').style.display = 'block';
-    document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  async function updateStatus(id, status) {
-    const { error } = await db
-      .from('form_submissions')
-      .update({ status })
-      .eq('id', id);
-    if (error) { console.error(error); return; }
-    const sub = allSubmissions.find(s => s.id === id);
-    if (sub) sub.status = status;
-    updateStats();
-    renderTable();
-    if (selectedId === id) openDetail(id);
-  }
-
-  function closeDetail() {
-    document.getElementById('detail-panel').style.display = 'none';
-    selectedId = null;
-  }
-  document.getElementById('close-detail').addEventListener('click', closeDetail);
-
-  // ---- HELPERS ----
-  function esc(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-  function formatDate(iso) {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) +
-      ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
-  }
-
-  init();
 })();
 </script>
 </body>
